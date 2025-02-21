@@ -11,7 +11,7 @@ impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
        let window_attributes = WindowAttributes::default();
        self.window = Some(event_loop.create_window(window_attributes).unwrap());
-       engine::Engine::new();
+       engine::Engine::new(self.window.as_ref().unwrap());
     }
 
     fn window_event(

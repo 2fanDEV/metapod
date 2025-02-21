@@ -1,16 +1,13 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum EntryLoadingError {
+pub enum InstanceCreationError {
     #[error("No vulkan library found at '{path:?}, original error: {msg:?}'")]
-    InvalidLocation {
+    EntryInvalidLocation {
         path: String,
         msg: String,
-    }
-}
+    },
 
-
-#[derive(Error, Debug)]
-pub enum InstanceCreationError {
-
+    #[error("Failed the validation check")]
+    ValidationCheck
 }

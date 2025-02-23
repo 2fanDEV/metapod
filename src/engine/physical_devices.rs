@@ -1,6 +1,7 @@
 use std::collections::{BTreeSet, HashSet};
 
-use crate::engine::{device::queues::QueueIndices, swapchain::SwapchainSupportDetails};
+use crate::engine::{swapchain::SwapchainSupportDetails};
+use crate::engine::queues::QueueIndices;
 use ash::{
     vk::{ExtensionProperties, PhysicalDevice, SurfaceKHR},
     Instance,
@@ -55,10 +56,12 @@ fn check_device_extensions(
     };
 
     for extension in device_extension_properties.clone() {
+        debug!("extension={:?}, test={:?}", extension, available_extension_properties[0]);
         if available_extension_properties.contains(&extension.to_owned()) {
             count = count + 1;
         }
     }
+    debug!("count={}", count);
     count == device_extension_properties.len()
 }
 
@@ -70,7 +73,7 @@ fn is_device_suitable(
 ) -> bool {
     let device_properties = unsafe { instance.get_physical_device_properties(physical_device) };
     let device_features = unsafe { instance.get_physical_device_features(physical_device) };
-    let extensions = vec!["VK_KHR_SWAPCHAIN_EXTENSION_NAME"];
+    let extensions = vec![ash::khr::swapchain::NAME.to_str().to_owned().unwrap()];
     let queue_family_indices = match QueueIndices::find_queue_family_indices(
         physical_device,
         instance,

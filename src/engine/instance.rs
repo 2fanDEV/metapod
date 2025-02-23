@@ -39,14 +39,14 @@ pub fn create_instance(window: &Window) -> Result<(Entry, Instance), InstanceCre
         .application_name(APP_NAME);
 
     let mut enabled_extension_names = get_enabled_extensions(window)?;
-    let mut enabled_layer_names = unsafe {
+ /*   let mut enabled_layer_names = unsafe {
         entry
             .enumerate_instance_layer_properties()
             .unwrap()
             .iter()
             .map(|layer| layer.layer_name.as_ptr())
             .collect::<Vec<*const i8>>()
-    };
+    };*/
 
     match check_validation_layer_support(&entry).unwrap() {
         true => enabled_extension_names.push(EXT_DEBUG_UTILS_NAME.as_ptr()),
@@ -69,7 +69,7 @@ pub fn create_instance(window: &Window) -> Result<(Entry, Instance), InstanceCre
 
     let instance_create_info = InstanceCreateInfo::default()
         .enabled_extension_names(&enabled_extension_names)
-        .enabled_layer_names(&enabled_layer_names)
+//        .enabled_layer_names(&enabled_layer_names)
         .flags(InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR)
         .application_info(&application_info)
         .push_next(&mut debug_create_info);

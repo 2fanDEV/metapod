@@ -2,6 +2,7 @@ use std::collections::{BTreeSet, HashSet};
 
 use crate::engine::{swapchain::SwapchainSupportDetails};
 use crate::engine::queues::QueueIndices;
+use ash::vk::QueueFlags;
 use ash::{
     vk::{ExtensionProperties, PhysicalDevice, SurfaceKHR},
     Instance,
@@ -79,6 +80,7 @@ fn is_device_suitable(
         instance,
         &surface_instance,
         &surface,
+        QueueFlags::GRAPHICS
     ) {
         Ok(q_family) => q_family,
         Err(err) => panic!("{}", err),

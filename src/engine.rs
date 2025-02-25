@@ -2,10 +2,11 @@ use anyhow::Error;
 use ash::{
     ext::debug_report::Instance,
     khr::surface,
-    vk::{DebugUtilsMessengerEXT, Image, PhysicalDevice, Queue, SurfaceKHR, SwapchainKHR},
+    vk::{DebugUtilsMessengerEXT, Image, PhysicalDevice, Queue, QueueFlags, SurfaceKHR, SwapchainKHR},
     Device, Entry,
 };
 use debugger::setup_debugger;
+use frame_data::{FrameData, MAX_FRAME_SIZE};
 use instance::create_instance;
 use queues::QueueIndices;
 use swapchain::SwapchainSupportDetails;
@@ -20,6 +21,7 @@ mod instance;
 mod swapchain;
 mod queues;
 mod physical_devices;
+mod frame_data;
 
 pub struct Engine {
     entry: Entry,
@@ -36,6 +38,7 @@ pub struct Engine {
     swapchain_device: ash::khr::swapchain::Device,
     swapchain: SwapchainKHR,
     images: Vec<Image>,
+    frames: Vec<FrameData>
 }
 
 impl Engine {
@@ -63,6 +66,7 @@ impl Engine {
             &instance,
             &surface_instance,
             &surface_khr,
+            QueueFlags::GRAPHICS
         )
         .unwrap();
         let device = device::create_device(&instance, physical_device, queue_indices).unwrap();
@@ -86,6 +90,10 @@ impl Engine {
         )
         .unwrap();
         let images = swapchain::create_swapchain_images(&swapchain_device, swapchain)?;
+        let mut frames: Vec<FrameData> = Vec::new();
+        for i in 0..MAX_FRAME_SIZE{
+            frames.push(FrameData::new(&device, queue_indices.graphics_queue_index.unwrap())?);
+        }
 
         Ok(Engine {
             entry,
@@ -102,6 +110,7 @@ impl Engine {
             swapchain_device,
             swapchain,
             images,
+            frames
         })
     }
 }

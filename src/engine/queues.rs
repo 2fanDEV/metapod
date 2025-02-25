@@ -22,6 +22,7 @@ impl QueueIndices {
         instance: &Instance,
         surface_instance: &ash::khr::surface::Instance,
         surface: &SurfaceKHR,
+        queue_type: QueueFlags,
     ) -> Result<QueueIndices, QueueFamilyIndicesError> {
         let q_family_properties =
             unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
@@ -29,7 +30,7 @@ impl QueueIndices {
         let (queue_idx, queue_fam) = match q_family_properties
             .iter()
             .enumerate()
-            .find(|&q_family| q_family.1.queue_flags.contains(QueueFlags::GRAPHICS))
+            .find(|&q_family| q_family.1.queue_flags.contains(queue_type))
         {
             Some(q_fam) => q_fam,
             None => return Err(QueueFamilyIndicesError::NotFoundError),

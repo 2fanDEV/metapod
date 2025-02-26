@@ -10,11 +10,11 @@ use super::command_buffers::{create_command_buffer, create_command_pool};
 
 
 pub struct FrameData {
-    command_pool: CommandPool,
-    command_buffer: CommandBuffer,
-    swapchain_semaphore: Semaphore,
-    render_semaphore: Semaphore,
-    render_fence: Fence
+    pub command_pool: CommandPool,
+    pub command_buffer: CommandBuffer,
+    pub swapchain_semaphore: Semaphore,
+    pub render_semaphore: Semaphore,
+    pub render_fence: Fence
 }
 
 impl FrameData {

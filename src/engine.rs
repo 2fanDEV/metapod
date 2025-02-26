@@ -9,7 +9,7 @@ use ash::{
     Device, Entry,
 };
 use debugger::setup_debugger;
-use frame_data::{FrameData};
+use frame_data::FrameData;
 use frame_data::MAX_FRAME_SIZE;
 use instance::create_instance;
 use queues::QueueIndices;
@@ -48,13 +48,22 @@ pub struct Engine {
     swapchain: SwapchainKHR,
     images: Vec<Image>,
     frames: Vec<FrameData>,
-    frame: u32,
+    frame: usize,
 }
 
 impl Engine {
-
     pub fn draw(&self) {
-        self.device.wait_for_fences(fences, wait_all, timeout)
+        unsafe {
+            self.device
+                .wait_for_fences(
+                    &[self.frames[self.frame].render_fence],
+                    true,
+                    1000000000 as u64,
+                )
+                .unwrap();
+
+            self.device.reset_fences(&[self.frames[self.frame].render_fence]).unwrap();
+        }
     }
 
     pub fn new(window: &Window) -> Result<Engine, Error> {
@@ -133,7 +142,7 @@ impl Engine {
             swapchain,
             images,
             frames,
-            frame: 0
+            frame: 0,
         })
     }
 }

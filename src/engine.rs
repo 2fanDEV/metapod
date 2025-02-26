@@ -2,26 +2,35 @@ use anyhow::Error;
 use ash::{
     ext::debug_report::Instance,
     khr::surface,
-    vk::{DebugUtilsMessengerEXT, Image, PhysicalDevice, Queue, QueueFlags, SurfaceKHR, SwapchainKHR},
+    vk::{
+        DebugUtilsMessengerEXT, Fence, FenceCreateFlags, Image, PhysicalDevice, Queue, QueueFlags,
+        Semaphore, SurfaceKHR, SwapchainKHR,
+    },
     Device, Entry,
 };
 use debugger::setup_debugger;
-use frame_data::{FrameData, MAX_FRAME_SIZE};
+use frame_data::{FrameData};
+use frame_data::MAX_FRAME_SIZE;
 use instance::create_instance;
 use queues::QueueIndices;
 use swapchain::SwapchainSupportDetails;
+use sync_objects::{create_fence, create_semaphore};
 use winit::{
     raw_window_handle::{HasDisplayHandle, HasWindowHandle},
     window::Window,
 };
+mod command_buffers;
 mod debugger;
 mod device;
 mod errors;
-mod instance;
-mod swapchain;
-mod queues;
-mod physical_devices;
 mod frame_data;
+mod instance;
+mod physical_devices;
+mod queues;
+mod swapchain;
+mod sync_objects;
+
+pub static MAX_FRAME_SIZE: usize = 2;
 
 pub struct Engine {
     entry: Entry,
@@ -38,10 +47,16 @@ pub struct Engine {
     swapchain_device: ash::khr::swapchain::Device,
     swapchain: SwapchainKHR,
     images: Vec<Image>,
-    frames: Vec<FrameData>
+    frames: Vec<FrameData>,
+    frame: u32,
 }
 
 impl Engine {
+
+    pub fn draw(&self) {
+        self.device.wait_for_fences(fences, wait_all, timeout)
+    }
+
     pub fn new(window: &Window) -> Result<Engine, Error> {
         let width = window.inner_size().width;
         let height = window.inner_size().height;
@@ -66,7 +81,7 @@ impl Engine {
             &instance,
             &surface_instance,
             &surface_khr,
-            QueueFlags::GRAPHICS
+            QueueFlags::GRAPHICS,
         )
         .unwrap();
         let device = device::create_device(&instance, physical_device, queue_indices).unwrap();
@@ -91,8 +106,15 @@ impl Engine {
         .unwrap();
         let images = swapchain::create_swapchain_images(&swapchain_device, swapchain)?;
         let mut frames: Vec<FrameData> = Vec::new();
-        for i in 0..MAX_FRAME_SIZE{
-            frames.push(FrameData::new(&device, queue_indices.graphics_queue_index.unwrap())?);
+
+        for i in 0..MAX_FRAME_SIZE {
+            frames.push(FrameData::new(
+                &device,
+                queue_indices.graphics_queue_index.unwrap(),
+                create_semaphore(&device)?,
+                create_semaphore(&device)?,
+                create_fence(&device, FenceCreateFlags::SIGNALED)?,
+            )?);
         }
 
         Ok(Engine {
@@ -110,7 +132,8 @@ impl Engine {
             swapchain_device,
             swapchain,
             images,
-            frames
+            frames,
+            frame: 0
         })
     }
 }

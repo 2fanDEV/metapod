@@ -1,45 +1,38 @@
 use anyhow::Error;
 use ash::{
     vk::{
-        CommandBuffer, CommandBufferAllocateInfo, CommandBufferLevel, CommandPool,
-        CommandPoolCreateFlags, CommandPoolCreateInfo, Instance,
+        CommandBuffer, CommandBufferAllocateInfo, CommandBufferLevel, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo, Fence, Instance, Semaphore
     },
     Device,
 };
 
-pub static MAX_FRAME_SIZE: usize = 2;
+use super::command_buffers::{create_command_buffer, create_command_pool};
+
 
 pub struct FrameData {
     command_pool: CommandPool,
     command_buffer: CommandBuffer,
+    swapchain_semaphore: Semaphore,
+    render_semaphore: Semaphore,
+    render_fence: Fence
 }
 
 impl FrameData {
     pub fn new(
         device: &Device,
         queue_family_index: u32,
+        render_semaphore : Semaphore, 
+        swapchain_semaphore: Semaphore,
+        render_fence: Fence
     ) -> Result<FrameData, Error> {
-        let create_info = CommandPoolCreateInfo::default()
-            .queue_family_index(queue_family_index)
-            .flags(CommandPoolCreateFlags::RESET_COMMAND_BUFFER);
-        let command_pool = unsafe { device.create_command_pool(&create_info, None).unwrap() };
-
-        let command_buffer_allocate_info = CommandBufferAllocateInfo::default()
-            .command_pool(command_pool)
-            .level(CommandBufferLevel::PRIMARY)
-            .command_buffer_count(1);
-
-        let command_buffer = unsafe {
-            *device
-                            .allocate_command_buffers(&command_buffer_allocate_info)
-                            .unwrap()
-                            .get(0)
-                            .unwrap()
-        };
-
+        let command_pool = create_command_pool(device, queue_family_index)?;
+        let command_buffer = create_command_buffer(device, command_pool)?;
         Ok(Self {
             command_pool,
-            command_buffer
+            command_buffer,
+            render_fence,
+            render_semaphore,
+            swapchain_semaphore
         })
     }
 }

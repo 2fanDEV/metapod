@@ -7,7 +7,7 @@ use ash::vk::{
     };
 use super::queues::QueueIndices;
 
-use super::{errors::device_error::DeviceError, queues, swapchain};
+use super::errors::device_error::DeviceError;
 
 
 pub fn create_device(

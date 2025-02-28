@@ -1,8 +1,8 @@
 use anyhow::Error;
 use ash::{
     vk::{
-        CommandBuffer, CommandBufferAllocateInfo, CommandBufferLevel, CommandPool,
-        CommandPoolCreateFlags, CommandPoolCreateInfo,
+        CommandBuffer, CommandBufferAllocateInfo, CommandBufferBeginInfo, CommandBufferLevel,
+        CommandBufferUsageFlags, CommandPool, CommandPoolCreateFlags, CommandPoolCreateInfo,
     },
     Device,
 };
@@ -30,4 +30,19 @@ pub fn create_command_buffer(
             .get(0)
             .unwrap()
     })
+}
+
+pub fn begin_command_buffer(
+    device: &Device,
+    command_buffer: CommandBuffer,
+    flags: CommandBufferUsageFlags,
+) -> Result<(), Error> {
+    let begin_info = CommandBufferBeginInfo::default().flags(flags);
+
+    unsafe {
+        device
+            .begin_command_buffer(command_buffer, &begin_info)
+            .unwrap()
+    };
+    Ok(())
 }

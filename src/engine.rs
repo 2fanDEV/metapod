@@ -1,23 +1,21 @@
 use anyhow::Error;
 use ash::{
-    ext::debug_report::Instance,
     khr::surface,
     vk::{
-        DebugUtilsMessengerEXT, Fence, FenceCreateFlags, Image, PhysicalDevice, Queue, QueueFlags,
-        Semaphore, SurfaceKHR, SwapchainKHR,
+        CommandBufferResetFlags, CommandBufferUsageFlags, DebugUtilsMessengerEXT, FenceCreateFlags, Image, PhysicalDevice, Queue, QueueFlags, SurfaceKHR, SwapchainKHR
     },
     Device, Entry,
 };
+use command_buffers::begin_command_buffer;
 use debugger::setup_debugger;
 use frame_data::FrameData;
-use frame_data::MAX_FRAME_SIZE;
 use instance::create_instance;
 use queues::QueueIndices;
 use swapchain::SwapchainSupportDetails;
 use sync_objects::{create_fence, create_semaphore};
 use winit::{
     raw_window_handle::{HasDisplayHandle, HasWindowHandle},
-    window::Window,
+    window::{self, Window},
 };
 mod command_buffers;
 mod debugger;
@@ -29,6 +27,7 @@ mod physical_devices;
 mod queues;
 mod swapchain;
 mod sync_objects;
+mod util;
 
 pub static MAX_FRAME_SIZE: usize = 2;
 
@@ -47,23 +46,30 @@ pub struct Engine {
     swapchain_device: ash::khr::swapchain::Device,
     swapchain: SwapchainKHR,
     images: Vec<Image>,
-    frames: Vec<FrameData>,
+    frame_data: Vec<FrameData>,
     frame: usize,
 }
 
 impl Engine {
-    pub fn draw(&self) {
+    pub fn draw(&self) -> Result<(), Error> {
         unsafe {
             self.device
                 .wait_for_fences(
-                    &[self.frames[self.frame].render_fence],
+                    &[self.frame_data[self.frame].render_fence],
                     true,
                     1000000000 as u64,
                 )
                 .unwrap();
 
-            self.device.reset_fences(&[self.frames[self.frame].render_fence]).unwrap();
+            self.device.reset_fences(&[self.frame_data[self.frame].render_fence]).unwrap();
+
+            let _next_image = self.swapchain_device.acquire_next_image(self.swapchain,1000000000 as u64 ,self.frame_data[self.frame].swapchain_semaphore, self.frame_data[self.frame].render_fence).unwrap();
         }
+
+            unsafe { self.device.reset_command_buffer(self.frame_data[self.frame].command_buffer, CommandBufferResetFlags::empty())? };
+            begin_command_buffer(&self.device,self.frame_data[self.frame].command_buffer, CommandBufferUsageFlags::ONE_TIME_SUBMIT).unwrap();
+
+            Ok(())
     }
 
     pub fn new(window: &Window) -> Result<Engine, Error> {
